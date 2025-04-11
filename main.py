@@ -1,33 +1,13 @@
 from fastapi import FastAPI, HTTPException, status, Response, Depends
-from typing import Optional, Any, List
-
-from sqlalchemy import create_engine, Column, Integer, String
+from models import Base, engine, SessionLocal, Character, List
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
-
-DATABASE_URL = 'sqlite:///./character.db'
-
-engine = create_engine(DATABASE_URL, connect_args={'check_same_thread': False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+from schemas import *
 
 app = FastAPI(title='CHARACTER API', version='beta', description='How to')
-
-class Character(Base):
-    __tablename__ = 'characters'
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    strength = Column(Integer, index=True)
-    defense = Column(Integer, index=True)
-    agility = Column(Integer, index=True)
-
 Base.metadata.create_all(bind=engine)
 
-    
 def db_connect():
     db = SessionLocal()
     try:
@@ -35,35 +15,9 @@ def db_connect():
     finally:
         db.close()
 
-class CharacterCreate(BaseModel):
-    id: int
-    name: str
-    strength: int
-    defense: int
-    agility: int
-
-class CharacterResponse(BaseModel):
-    id: int
-    name: str
-    strength: int
-    defense: int
-    agility: int
-    
-class CharacterUpdate(BaseModel):
-    name: Optional[str] = None
-    strength: Optional[int] = None
-    defense: Optional[int] = None
-    agility: Optional[int] = None
-
 @app.post('/characters/', response_model=CharacterResponse)
 def create_character(charac: CharacterCreate, db:Session=Depends(db_connect)):
-    db_character = Character(
-        id=charac.id, 
-        name=charac.name, 
-        strength=charac.strength, 
-        defense=charac.defense,
-        agility=charac.agility
-        )
+    db_character = Character(**charac.model_dump())
     db.add(db_character)
     db.commit()
     db.refresh(db_character)
@@ -75,9 +29,7 @@ def read_characters(
     limit: int = 10, 
     db: Session = Depends(db_connect)
     ):
-    characters = db.query(Character).offset(skip).limit(limit).all()    
-    return characters
-
+    return db.query(Character).offset(skip).limit(limit=limit).all()
 @app.get('/characters/{character_id}', response_model=CharacterResponse)
 def read_user_by_id(
     charac_id:int, 
