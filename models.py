@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
 
 DATABASE_URL = 'sqlite:///./character.db'
 # ----------------------Django Settings -----------------------------------
@@ -28,3 +30,26 @@ class Character(Base):
     strength = Column(Integer, index=True)
     defense = Column(Integer, index=True)
     agility = Column(Integer, index=True)
+    
+
+class Skill(Base):
+    __tablename__ = 'skills'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    power = Column(Integer)
+    type = Column(String)  # 'attack', 'deffense', 'support'
+
+    characters = relationship("CharacterSkill", back_populates="skill")
+
+class CharacterSkill(Base):
+    __tablename__ = 'character_skills'
+
+    id = Column(Integer, primary_key=True, index=True)
+    character_id = Column(Integer, ForeignKey('characters.id'))
+    skill_id = Column(Integer, ForeignKey('skills.id'))
+
+    character = relationship("Character", back_populates="skills")
+    skill = relationship("Skill", back_populates="characters")
+
+Character.skills = relationship("CharacterSkill", back_populates="character")
