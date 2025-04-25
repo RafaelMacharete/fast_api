@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, status, Response, Depends
-from models import Base, engine, SessionLocal, Character, List
+from models import Base, engine, SessionLocal, Character, List, Skill, CharacterSkill
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
@@ -88,3 +88,45 @@ def partial_update_character(character_id: int, charac: CharacterUpdate, db: Ses
     db.commit()
     db.refresh(db_character)
     return db_character
+
+@app.post("/skills/", response_model=SkillResponse)
+def create_skill(skill: SkillCreate, db: Session = Depends(db_connect)):
+    db_skill = Skill(**skill.model_dump())
+    db.add(db_skill)
+    db.commit()
+    db.refresh(db_skill)
+    return db_skill
+
+@app.post("/characters/{character_id}/skills/{skill_id}", response_model=CharacterSkillResponse)
+def add_skill_to_character(character_id: int, skill_id: int, db: Session = Depends(db_connect)):
+    character = db.query(Character).filter(Character.id == character_id).first()
+    skill = db.query(Skill).filter(Skill.id == skill_id).first()
+
+    if not character or not skill:
+        raise HTTPException(status_code=404, detail="Character or Skill not found")
+
+    association = CharacterSkill(character_id=character.id, skill_id=skill.id)
+    db.add(association)
+    db.commit()
+    db.refresh(association)
+    return association
+
+@app.post("/battle/")
+def battle(char1_id: int, char2_id: int, db: Session = Depends(db_connect)):
+    char1 = db.query(Character).filter(Character.id == char1_id).first()
+    char2 = db.query(Character).filter(Character.id == char2_id).first()
+
+    if not char1 or not char2:
+        raise HTTPException(status_code=404, detail="Character not found")
+
+    score1 = char1.strength + char1.agility + char1.defense
+    score2 = char2.strength + char2.agility + char2.defense
+
+    if score1 > score2:
+        winner = char1.name
+    elif score2 > score1:
+        winner = char2.name
+    else:
+        winner = "Draw"
+
+    return {"winner": winner, "char1_score": score1, "char2_score": score2}

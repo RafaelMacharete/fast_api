@@ -21,3 +21,24 @@ class CharacterUpdate(CharacterBase):
     strength: Optional[int] = None
     defense: Optional[int] = None
     agility: Optional[int] = None
+
+class SkillBase(BaseModel):
+    name: str
+    power: int
+    type: str
+
+class SkillCreate(SkillBase):
+    pass
+
+class SkillResponse(SkillBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+class CharacterSkillResponse(BaseModel):
+    character_id: int
+    skill: SkillResponse
+
+    class Config:
+        orm_mode = True
