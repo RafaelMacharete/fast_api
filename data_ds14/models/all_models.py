@@ -1,0 +1,2 @@
+from models.champion_model import ChampionModel
+from models.minion_model import MinionModel
