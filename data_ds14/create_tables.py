@@ -1,6 +1,6 @@
 from core.configs import settings
 from core.database import engine
-
+# To 5s 
 from models import all_models
 
 async def create_tables() -> None:
