@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Character Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        input,
+        select,
+        button {
+            margin: 4px;
+            padding: 6px;
+        }
+
+        .character {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .delete {
+            color: red;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>RPG Character Manager</h1>
+
+    <div>
+        <input type="text" id="name" placeholder="Name">
+        <input type="number" id="age" placeholder="Age">
+        <input type="text" id="region" placeholder="Region">
+        <input type="text" id="image" placeholder="Image URL"><br>
+        <input type="number" id="hp" placeholder="HP">
+        <input type="number" id="physical_damage" placeholder="Physical Damage">
+        <input type="number" id="magic_damage" placeholder="Magic Damage">
+        <input type="number" id="armor_defense" placeholder="Armor Defense">
+        <input type="number" id="magic_defense" placeholder="Magic Defense">
+        <input type="number" id="movement_speed" placeholder="Movement Speed"><br>
+        <label>Habilities:</label><br>
+        <select id="hability_ids" multiple style="width: 300px;"></select><br>
+        <button onclick="createCharacter()">Create Character</button>
+    </div>
+
+    <h2>Characters List</h2>
+    <div id="characters"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+
+        async function fetchHabilities() {
+            const res = await fetch(`${API_BASE}/habilities`);
+            const habilities = await res.json();
+            const select = document.getElementById('hability_ids');
+            habilities.forEach(h => {
+                const option = document.createElement('option');
+                option.value = h.id;
+                option.textContent = h.name;
+                select.appendChild(option);
+            });
+        }
+
+        async function fetchCharacters() {
+            const res = await fetch(`${API_BASE}/character/retrieve`);
+            const characters = await res.json();
+            const container = document.getElementById('characters');
+            container.innerHTML = '';
+            characters.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'character';
+                div.innerHTML = `
+          <strong>${c.name}</strong> - ${c.region} (${c.age} yrs)<br>
+          HP: ${c.hp} | PhyDmg: ${c.physical_damage} | MagDmg: ${c.magic_damage}<br>
+          Habilities: ${(c.habilities || []).map(h => h.name).join(', ') || 'None'}<br>
+          <span class="delete" onclick="deleteCharacter(${c.id})">Delete</span>
+        `;
+                container.appendChild(div);
+            });
+        }
+
+        async function createCharacter() {
+            const form = {
+                name: document.getElementById('name').value,
+                age: parseInt(document.getElementById('age').value),
+                region: document.getElementById('region').value,
+                image: document.getElementById('image').value,
+                hp: parseInt(document.getElementById('hp').value),
+                physical_damage: parseInt(document.getElementById('physical_damage').value),
+                magic_damage: parseInt(document.getElementById('magic_damage').value),
+                armor_defense: parseInt(document.getElementById('armor_defense').value),
+                magic_defense: parseInt(document.getElementById('magic_defense').value),
+                movement_speed: parseInt(document.getElementById('movement_speed').value),
+                hability_ids: Array.from(document.getElementById('hability_ids').selectedOptions).map(o => parseInt(o.value))
+            };
+
+            await fetch(`${API_BASE}/character/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(form)
+            });
+            fetchCharacters();
+        }
+
+        async function deleteCharacter(id) {
+            await fetch(`${API_BASE}/character/delete/${id}`, { method: 'DELETE' });
+            fetchCharacters();
+        }
+
+        fetchHabilities();
+        fetchCharacters();
+    </script>
+</body>
+
+</html>
