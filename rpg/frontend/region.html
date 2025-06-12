@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Regions Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        input,
+        button {
+            margin: 4px;
+            padding: 6px;
+        }
+
+        .region {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .delete,
+        .edit {
+            color: red;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="character.html">Gerenciar Personagens</a>
+    <h1>RPG Regions Manager</h1>
+
+    <div>
+        <input type="hidden" id="region_id">
+        <input type="text" id="name" placeholder="Region Name">
+        <button onclick="saveRegion()">Salvar</button>
+        <button onclick="resetForm()">Limpar</button>
+    </div>
+
+    <h2>Regions List</h2>
+    <div id="regions"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+
+        async function fetchRegions() {
+            const res = await fetch(`${API_BASE}/region/`);
+            const regions = await res.json();
+            const container = document.getElementById('regions');
+            container.innerHTML = '';
+            regions.forEach(r => {
+                const div = document.createElement('div');
+                div.className = 'region';
+                div.innerHTML = `
+                    <strong>${r.name}</strong><br>
+                    <span class="edit" onclick="editRegion(${r.id}, '${r.name}')">Edit</span>
+                    <span class="delete" onclick="deleteRegion(${r.id})">Delete</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function saveRegion() {
+            const regionId = document.getElementById('region_id').value;
+            const form = { name: document.getElementById('name').value };
+
+            if (regionId) {
+                await fetch(`${API_BASE}/region/${regionId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(form)
+                });
+            } else {
+                await fetch(`${API_BASE}/region/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(form)
+                });
+            }
+            resetForm();
+            fetchRegions();
+        }
+
+        async function deleteRegion(id) {
+            await fetch(`${API_BASE}/region/${id}`, { method: 'DELETE' });
+            fetchRegions();
+        }
+
+        function editRegion(id, name) {
+            document.getElementById('region_id').value = id;
+            document.getElementById('name').value = name;
+        }
+
+        function resetForm() {
+            document.getElementById('region_id').value = '';
+            document.getElementById('name').value = '';
+        }
+
+        fetchRegions();
+    </script>
+</body>
+
+</html>

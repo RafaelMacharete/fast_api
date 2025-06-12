@@ -24,20 +24,30 @@
             margin-bottom: 10px;
         }
 
-        .delete {
+        .delete,
+        .edit {
             color: red;
             cursor: pointer;
+            margin-right: 10px;
+        }
+
+        img {
+            max-width: 100px;
+            display: block;
+            margin-bottom: 5px;
         }
     </style>
 </head>
 
 <body>
+    <a href="region.html">Gerenciar Regiões</a>
     <h1>RPG Character Manager</h1>
 
     <div>
-        <input type="t-ext" id="name" placeholder="Name">
+        <input type="hidden" id="character_id">
+        <input type="text" id="name" placeholder="Name">
         <input type="number" id="age" placeholder="Age">
-        <input type="text" id="region" placeholder="Region">
+        <select id="region_id"></select>
         <input type="text" id="image" placeholder="Image URL"><br>
         <input type="number" id="hp" placeholder="HP">
         <input type="number" id="physical_damage" placeholder="Physical Damage">
@@ -45,9 +55,8 @@
         <input type="number" id="armor_defense" placeholder="Armor Defense">
         <input type="number" id="magic_defense" placeholder="Magic Defense">
         <input type="number" id="movement_speed" placeholder="Movement Speed"><br>
-        <label>Habilities:</label><br>
-        <select id="hability_ids" multiple style="width: 300px;"></select><br>
-        <button onclick="createCharacter()">Create Character</button>
+        <button onclick="saveCharacter()">Salvar</button>
+        <button onclick="resetForm()">Limpar</button>
     </div>
 
     <h2>Characters List</h2>
@@ -56,14 +65,15 @@
     <script>
         const API_BASE = 'http://localhost:8000/api/v1';
 
-        async function fetchHabilities() {
-            const res = await fetch(`${API_BASE}/habilities`);
-            const habilities = await res.json();
-            const select = document.getElementById('hability_ids');
-            habilities.forEach(h => {
+        async function fetchRegions() {
+            const res = await fetch(`${API_BASE}/region/`);
+            const regions = await res.json();
+            const select = document.getElementById('region_id');
+            select.innerHTML = '';
+            regions.forEach(r => {
                 const option = document.createElement('option');
-                option.value = h.id;
-                option.textContent = h.name;
+                option.value = r.id;
+                option.textContent = r.name;
                 select.appendChild(option);
             });
         }
@@ -77,20 +87,22 @@
                 const div = document.createElement('div');
                 div.className = 'character';
                 div.innerHTML = `
-          <strong>${c.name}</strong> - ${c.region} (${c.age} yrs)<br>
-          HP: ${c.hp} | PhyDmg: ${c.physical_damage} | MagDmg: ${c.magic_damage}<br>
-          Habilities: ${(c.habilities || []).map(h => h.name).join(', ') || 'None'}<br>
-          <span class="delete" onclick="deleteCharacter(${c.id})">Delete</span>
-        `;
+                    <img src="${c.image}" alt="${c.name}">
+                    <strong>${c.name}</strong> - ${c.region?.name || 'N/A'} (${c.age} yrs)<br>
+                    HP: ${c.hp} | PhyDmg: ${c.physical_damage} | MagDmg: ${c.magic_damage}<br>
+                    <span class="edit" onclick="editCharacter(${c.id})">Edit</span>
+                    <span class="delete" onclick="deleteCharacter(${c.id})">Delete</span>
+                `;
                 container.appendChild(div);
             });
         }
 
-        async function createCharacter() {
+        async function saveCharacter() {
+            const characterId = document.getElementById('character_id').value;
             const form = {
                 name: document.getElementById('name').value,
                 age: parseInt(document.getElementById('age').value),
-                region: document.getElementById('region').value,
+                region_id: parseInt(document.getElementById('region_id').value),
                 image: document.getElementById('image').value,
                 hp: parseInt(document.getElementById('hp').value),
                 physical_damage: parseInt(document.getElementById('physical_damage').value),
@@ -98,15 +110,39 @@
                 armor_defense: parseInt(document.getElementById('armor_defense').value),
                 magic_defense: parseInt(document.getElementById('magic_defense').value),
                 movement_speed: parseInt(document.getElementById('movement_speed').value),
-                hability_ids: Array.from(document.getElementById('hability_ids').selectedOptions).map(o => parseInt(o.value))
             };
 
-            await fetch(`${API_BASE}/character/create`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form)
-            });
+            if (characterId) {
+                await fetch(`${API_BASE}/character/edit/${characterId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(form)
+                });
+            } else {
+                await fetch(`${API_BASE}/character/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(form)
+                });
+            }
+            resetForm();
             fetchCharacters();
+        }
+
+        async function editCharacter(id) {
+            const res = await fetch(`${API_BASE}/character/retrieve/${id}`);
+            const c = await res.json();
+            document.getElementById('character_id').value = c.id;
+            document.getElementById('name').value = c.name;
+            document.getElementById('age').value = c.age;
+            document.getElementById('region_id').value = c.region.id;
+            document.getElementById('image').value = c.image;
+            document.getElementById('hp').value = c.hp;
+            document.getElementById('physical_damage').value = c.physical_damage;
+            document.getElementById('magic_damage').value = c.magic_damage;
+            document.getElementById('armor_defense').value = c.armor_defense;
+            document.getElementById('magic_defense').value = c.magic_defense;
+            document.getElementById('movement_speed').value = c.movement_speed;
         }
 
         async function deleteCharacter(id) {
@@ -114,7 +150,12 @@
             fetchCharacters();
         }
 
-        fetchHabilities();
+        function resetForm() {
+            document.getElementById('character_id').value = '';
+            document.querySelectorAll('input').forEach(input => input.value = '');
+        }
+
+        fetchRegions();
         fetchCharacters();
     </script>
 </body>

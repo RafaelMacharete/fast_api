@@ -4,7 +4,11 @@ from core.configs import settings
 from api.v1.api import api_router
 
 app = FastAPI(title='League of Legends - Samuel dos Rifts')
-origins = ["*"]
+
+origins = [
+    "http://localhost:5500", 
+    "http://127.0.0.1:5500",
+]
 
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, 
                    allow_methods=["*"], allow_headers=["*"],

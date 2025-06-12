@@ -1,13 +1,12 @@
-from typing import List, Optional
-from pydantic import BaseModel as SCBaseModel
-from schemas.hability_schema import HabilityResponseSchema
+from pydantic import BaseModel
+from typing import Optional
+from schemas.region_schema import RegionResponseSchema
 
-class CharacterCreateSchema(SCBaseModel):
+class CharacterCreateSchema(BaseModel):
     name: str
     age: int
-    region: str
+    region_id: int
     image: str
-
     hp: int
     physical_damage: int
     magic_damage: int
@@ -15,11 +14,9 @@ class CharacterCreateSchema(SCBaseModel):
     magic_defense: int
     movement_speed: int
 
-    hability_ids: Optional[List[int]]  # List of IDs on POST
-
 class CharacterResponseSchema(CharacterCreateSchema):
     id: int
-    habilities: List[HabilityResponseSchema]  # Return the objects, and not IDs
+    region: Optional[RegionResponseSchema]
 
     class Config:
         orm_mode = True
