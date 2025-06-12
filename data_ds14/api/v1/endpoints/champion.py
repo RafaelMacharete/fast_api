@@ -105,4 +105,3 @@ async def delete_champion(champion_id : int, db : AsyncSession = Depends(get_ses
         else:
             raise HTTPException(detail='Champion not found',
                                 status_code=status.HTTP_404_NOT_FOUND)
-            
