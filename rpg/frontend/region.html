@@ -39,6 +39,7 @@
     <div>
         <input type="hidden" id="region_id">
         <input type="text" id="name" placeholder="Region Name">
+        <input type="text" id="description" placeholder="Description">
         <button onclick="saveRegion()">Salvar</button>
         <button onclick="resetForm()">Limpar</button>
     </div>
@@ -46,7 +47,10 @@
     <h2>Regions List</h2>
     <div id="regions"></div>
 
-    <script>
+    
+</body>
+
+</html><script>
         const API_BASE = 'http://localhost:8000/api/v1';
 
         async function fetchRegions() {
@@ -68,7 +72,10 @@
 
         async function saveRegion() {
             const regionId = document.getElementById('region_id').value;
-            const form = { name: document.getElementById('name').value };
+            const form = {
+                name: document.getElementById('name').value,
+                description: document.getElementById('description').value
+            };
 
             if (regionId) {
                 await fetch(`${API_BASE}/region/${regionId}`, {
@@ -104,6 +111,3 @@
 
         fetchRegions();
     </script>
-</body>
-
-</html>
